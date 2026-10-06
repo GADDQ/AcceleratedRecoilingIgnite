@@ -22,22 +22,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.example.mixin.core;
+package top.earthstudio.acceleratedrecoiling.mixin.core;
 
-import java.util.logging.Logger;
-import org.bukkit.craftbukkit.CraftServer;
+import top.earthstudio.acceleratedrecoiling.command.HelloCommand;
+import org.bukkit.command.Command;
+import org.bukkit.command.SimpleCommandMap;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(value = CraftServer.class)
-public abstract class MixinCraftServer {
-  @Shadow public abstract Logger getLogger();
+@Mixin(value = SimpleCommandMap.class)
+public abstract class MixinSimpleCommandMap {
+    @Shadow
+    public abstract boolean register(String fallbackPrefix, Command command);
 
-  @Inject(method = "<init>", at = @At("RETURN"))
-  private void onConstruction(CallbackInfo callback) {
-    this.getLogger().info("Hello World!");
-  }
+    @Inject(method = "setDefaultCommands()V", at = @At("TAIL"), remap = false)
+    public void registerOwnCommands(CallbackInfo callback) {
+        this.register("bukkit", new HelloCommand("hello"));
+    }
 }

@@ -22,45 +22,58 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.example.mixin.plugins;
+package top.earthstudio.acceleratedrecoiling.mixin.plugins;
 
 import java.util.List;
 import java.util.Set;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import org.objectweb.asm.tree.ClassNode;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
-public final class CorePlugin implements IMixinConfigPlugin {
-  @Override
-  public void onLoad(final @NotNull String mixinPackage) {
-  }
+import com.wiyuka.acceleratedrecoiling.natives.realtime.RealtimeNative;
 
-  @Override
-  public @Nullable String getRefMapperConfig() {
-      return null;
-  }
+public final class AcceleratedRecoiling implements IMixinConfigPlugin {
+    public static final Logger LOGGER = LoggerFactory.getLogger("AcceleratedRecoiling");
 
-  @Override
-  public boolean shouldApplyMixin(final @NotNull String targetClassName, final @NotNull String mixinClassName) {
-    return true;
-  }
+    @Override
+    public void onLoad(final @NotNull String mixinPackage) {
+        LOGGER.info("AcceleratedRecoiling, made by wiyuka-owo, Ported for Paper by Earth_Studio with <3. Now is loading...");
+        RealtimeNative.initialize();
+    }
 
-  @Override
-  public void acceptTargets(final @NotNull Set<String> myTargets, final @NotNull Set<String> otherTargets) {
-  }
+    @Override
+    public @Nullable String getRefMapperConfig() {
+        return null;
+    }
 
-  @Override
-  public @Nullable List<String> getMixins() {
-      return null;
-  }
+    @Override
+    public boolean shouldApplyMixin(final @NotNull String targetClassName, final @NotNull String mixinClassName) {
+        return true;
+    }
 
-  @Override
-  public void preApply(final @NotNull String targetClassName, final @NotNull ClassNode targetClass, final @NotNull String mixinClassName, final @NotNull IMixinInfo mixinInfo) {
-  }
+    @Override
+    public void acceptTargets(final @NotNull Set<String> myTargets, final @NotNull Set<String> otherTargets) {
+    }
 
-  @Override
-  public void postApply(final @NotNull String targetClassName, final @NotNull ClassNode targetClass, final @NotNull String mixinClassName, final @NotNull IMixinInfo mixinInfo) {
-  }
+    @Override
+    public @Nullable List<String> getMixins() {
+        return null;
+    }
+
+    @Override
+    public void preApply(final @NotNull String targetClassName, final @NotNull ClassNode targetClass, final @NotNull String mixinClassName, final @NotNull IMixinInfo mixinInfo) {
+    }
+
+    @Override
+    public void postApply(final @NotNull String targetClassName, final @NotNull ClassNode targetClass, final @NotNull String mixinClassName, final @NotNull IMixinInfo mixinInfo) {
+        LOGGER.info("AcceleratedRecoiling is loaded!");
+    }
 }

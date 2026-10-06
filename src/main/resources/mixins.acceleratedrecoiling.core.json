@@ -1,0 +1,11 @@
+{
+    "required": true,
+    "minVersion": "0.8.7",
+    "package": "top.earthstudio.acceleratedrecoiling.mixin.core",
+    "plugin": "top.earthstudio.acceleratedrecoiling.mixin.plugins.AcceleratedRecoiling",
+    "target": "@env(DEFAULT)",
+    "compatibilityLevel": "JAVA_25",
+    "server": [
+        "MixinSimpleCommandMap"
+    ]
+}

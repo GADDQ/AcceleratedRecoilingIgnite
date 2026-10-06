@@ -1,4 +1,4 @@
-rootProject.name = "ignite-template-build-logic"
+rootProject.name = "AcceleratedRecoilingIgnite-build-logic"
 
 dependencyResolutionManagement {
   repositories {
