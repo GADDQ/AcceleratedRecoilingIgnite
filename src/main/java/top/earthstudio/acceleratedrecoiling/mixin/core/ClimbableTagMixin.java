@@ -27,26 +27,28 @@ public abstract class ClimbableTagMixin<T> {
     private Set<TagKey<T>> tags;
 
     @Unique
-    private TagMembership<T> ar$climbableMembership;
+    private Set<TagKey<T>> ar$cachedTags;
+
+    @Unique
+    private boolean ar$isClimbable;
 
     @WrapMethod(method = "is(Lnet/minecraft/tags/TagKey;)Z")
     private boolean ar$climbableTag(TagKey<T> tag, Operation<Boolean> original) {
         if (tag != BlockTags.CLIMBABLE || !RealtimeNative.isEnabled()) {
             return original.call(tag);
         }
-        Set<TagKey<T>> current = tags;
-        TagMembership<T> cached = ar$climbableMembership;
-        if (current != null && cached != null && cached.tags() == current) {
-            return cached.member();
+
+        Set<TagKey<T>> current = this.tags;
+
+        if (current != null && current == this.ar$cachedTags) {
+            return this.ar$isClimbable;
         }
+
         boolean result = original.call(tag);
-        if (current == tags) {
-            ar$climbableMembership = new TagMembership<>(current, result);
+        if (current == this.tags) {
+            this.ar$cachedTags = current;
+            this.ar$isClimbable = result;
         }
         return result;
-    }
-
-    @Unique
-    private record TagMembership<T>(Set<TagKey<T>> tags, boolean member) {
     }
 }

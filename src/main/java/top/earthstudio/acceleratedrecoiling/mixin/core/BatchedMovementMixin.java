@@ -18,7 +18,7 @@ abstract class BatchedMovementMixin {
     @WrapOperation(method = "collide", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/world/level/Level;getEntityCollisions(Lnet/minecraft/world/entity/Entity;Lnet/minecraft/world/phys/AABB;)Ljava/util/List;"))
     private List<VoxelShape> ar$softSections(Level level, Entity entity, AABB area,
-            Operation<List<VoxelShape>> original) { // TODO: (@Nullable Entity entity, AABB collisionBox)
+            Operation<List<VoxelShape>> original) {
         if (RealtimeNative.isEnabled() && BatchedCollisions.noEntityObstacles(entity, area)) {
             return List.of();
         }

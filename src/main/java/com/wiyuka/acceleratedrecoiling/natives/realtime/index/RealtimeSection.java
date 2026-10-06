@@ -56,9 +56,9 @@ public final class RealtimeSection {
         private int liveCount;
         private int pins;
 
-        private View(Entity[] entities, ByteBuffer boxes, int count, boolean quantized) {
+        private View(Entity[] entities, ByteBuffer boxes, int count, boolean quantized, BlockPos sectionPosition) {
             this.entities = entities;
-            this.sectionPosition = SectionPos.of(entities[0].blockPosition()).origin();
+            this.sectionPosition = sectionPosition;
             this.boxes = boxes;
             this.address = RealtimeNative.address(boxes);
             this.stride = entities.length;
@@ -66,8 +66,8 @@ public final class RealtimeSection {
             this.liveCount = count;
             this.quantized = quantized;
             this.spatial = SpatialIndex.enabled(count)
-                    ? new SpatialIndex(stride, sectionPosition)
-                    : null;
+                ? new SpatialIndex(stride, sectionPosition)
+                : null;
         }
 
         public int count() {
@@ -159,20 +159,17 @@ public final class RealtimeSection {
         }
     }
 
-    public boolean softOnly(EntitySection<?> section) {
+    public boolean softOnly(ca.spottedleaf.moonrise.patches.chunk_system.level.entity.ChunkEntitySlices slices, int sectionY) {
         if (!softKnown) {
             nonSoft = 0;
-            var iterator = section.getEntities().iterator();
-
-            while (iterator.hasNext()) {
-                if (!BatchedRules.soft(iterator.next().getClass())) {
+            Entity[] entities = com.wiyuka.acceleratedrecoiling.natives.realtime.compat.MoonriseSectionHelper.getSectionEntities(slices, sectionY);
+            for (Entity entity : entities) {
+                if (!BatchedRules.soft(entity.getClass())) {
                     nonSoft++;
                 }
             }
-
             softKnown = true;
         }
-
         return nonSoft == 0;
     }
 
@@ -235,13 +232,14 @@ public final class RealtimeSection {
         }
     }
 
-    public View view(EntitySection<?> section) {
+    public View view(ca.spottedleaf.moonrise.patches.chunk_system.level.entity.ChunkEntitySlices slices, int sectionY) {
         if (!dirty) {
             return view;
         }
         View previous = view;
         boolean[] previousQueued = stateQueued;
-        var entries = section.getEntities().toArray();
+
+        Entity[] entries = com.wiyuka.acceleratedrecoiling.natives.realtime.compat.MoonriseSectionHelper.getSectionEntities(slices, sectionY);
 
         int requiredCapacity = Math.addExact(entries.length, Math.max(1, entries.length / 4));
         int stride = 16;
@@ -250,17 +248,13 @@ public final class RealtimeSection {
             stride = Math.multiplyExact(stride, 2);
         }
 
-        // avoid l1 cache-set aliasing between soa planes
         if (stride >= 512) {
             stride = Math.addExact(stride, 16);
         }
 
         var entities = new Entity[stride];
         for (int slot = 0; slot < entries.length; slot++) {
-            if (!(entries[slot] instanceof Entity entity)) {
-                return null;
-            }
-            entities[slot] = entity;
+            entities[slot] = entries[slot];
         }
 
         boolean quantized = RealtimeNative.quantizeSection(entries.length);
@@ -270,9 +264,10 @@ public final class RealtimeSection {
         }
 
         ByteBuffer boxes = ByteBuffer.allocateDirect(Math.multiplyExact(stride, bytesPerEntity))
-                .order(ByteOrder.nativeOrder());
+            .order(ByteOrder.nativeOrder());
 
-        view = new View(entities, boxes, entries.length, quantized);
+        BlockPos sectionOrigin = new BlockPos(slices.chunkX << 4, sectionY << 4, slices.chunkZ << 4);
+        view = new View(entities, boxes, entries.length, quantized, sectionOrigin);
 
         dirty = false;
         stateQueued = new boolean[entities.length];
@@ -283,10 +278,10 @@ public final class RealtimeSection {
             int oldSlot = indexed.ar$sectionSlot();
 
             boolean cached = previous != null
-                    && indexed.ar$section() == this
-                    && oldSlot >= 0
-                    && oldSlot < previous.count
-                    && previous.entities[oldSlot] == entities[slot];
+                && indexed.ar$section() == this
+                && oldSlot >= 0
+                && oldSlot < previous.count
+                && previous.entities[oldSlot] == entities[slot];
 
             indexed.ar$bindSection(this, slot);
             writeBox(slot, entities[slot].getBoundingBox());

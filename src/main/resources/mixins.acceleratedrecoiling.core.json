@@ -6,6 +6,20 @@
     "target": "@env(DEFAULT)",
     "compatibilityLevel": "JAVA_25",
     "server": [
-        "MixinSimpleCommandMap"
+        "BatchedEntityStateMixin",
+        "BatchedLevelAccess",
+        "BatchedLivingEntityMixin",
+        "BatchedMovementMixin",
+        "BatchedScoreboardMixin",
+        "BatchedSyncedStateMixin",
+        "ClimbableTagMixin",
+        "EntityMixin",
+        "LivingEntityAccess",
+        "MixinSimpleCommandMap",
+        "PushableMemoryMixin",
+        "RealtimeGetterAccess",
+        "RealtimeSectionMixin",
+        "ServerLevelMixin",
+        "ChunkEntitySlicesMixin"
     ]
 }

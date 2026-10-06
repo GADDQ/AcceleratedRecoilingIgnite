@@ -18,7 +18,7 @@ public class BatchedEntityStateMixin { // TODO: correct to moonrise
         ((IndexedEntity) this).ar$collisionStateDirty();
     }
 
-    @Inject(method = "startRiding(Lnet/minecraft/world/entity/Entity;Z)Z", at = { @At("HEAD"), @At("RETURN") })
+    @Inject(method = "startRiding(Lnet/minecraft/world/entity/Entity;ZZ)Z", at = { @At("HEAD"), @At("RETURN") }) // TODO: replace correct method, paper doesn't have this method
     private void ar$mounted(CallbackInfoReturnable<Boolean> cir) {
         ((IndexedEntity) this).ar$collisionStateDirty();
     }

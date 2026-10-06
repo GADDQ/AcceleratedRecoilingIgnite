@@ -11,3 +11,5 @@ dependencies {
 
   annotationProcessor(libs.mixinExtras)
 }
+
+apply(from = "realtime-native.gradle")

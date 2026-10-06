@@ -3,5 +3,8 @@
     "version": "1.0.0",
     "mixins": [
         "mixins.acceleratedrecoiling.core.json"
+    ],
+    "wideners": [
+        "acceleratedrecoiling.accesswidener"
     ]
 }

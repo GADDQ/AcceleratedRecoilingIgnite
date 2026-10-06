@@ -45,8 +45,8 @@ public final class AcceleratedRecoiling implements IMixinConfigPlugin {
 
     @Override
     public void onLoad(final @NotNull String mixinPackage) {
-        LOGGER.info("AcceleratedRecoiling, made by wiyuka-owo, Ported for Paper by Earth_Studio with <3. Now is loading...");
-        RealtimeNative.initialize();
+        LOGGER.info("AcceleratedRecoiling, made by wiyuka-owo, Ported for Paper by Earth_Studio with <3. Now is loaded!");
+        //RealtimeNative.initialize();
     }
 
     @Override
@@ -73,7 +73,5 @@ public final class AcceleratedRecoiling implements IMixinConfigPlugin {
     }
 
     @Override
-    public void postApply(final @NotNull String targetClassName, final @NotNull ClassNode targetClass, final @NotNull String mixinClassName, final @NotNull IMixinInfo mixinInfo) {
-        LOGGER.info("AcceleratedRecoiling is loaded!");
-    }
+    public void postApply(final @NotNull String targetClassName, final @NotNull ClassNode targetClass, final @NotNull String mixinClassName, final @NotNull IMixinInfo mixinInfo) {}
 }

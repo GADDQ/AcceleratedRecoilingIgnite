@@ -1,7 +1,5 @@
 package com.wiyuka.acceleratedrecoiling.natives.realtime;
 
-import com.wiyuka.acceleratedrecoiling.config.FoldConfig;
-
 import java.io.IOException;
 
 import java.nio.ByteBuffer;
@@ -63,7 +61,7 @@ public final class RealtimeNative {
     }
 
     public static boolean isEnabled() {
-        return loaded && FoldConfig.enableEntityCollision;
+        return loaded;
     }
 
     private static String platformPath() {

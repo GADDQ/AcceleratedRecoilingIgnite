@@ -25,9 +25,7 @@ import net.minecraft.world.level.entity.EntitySection;
 import net.minecraft.world.level.entity.EntitySectionStorage;
 import net.minecraft.world.scores.Scoreboard;
 
-import net.neoforged.neoforge.common.CommonHooks;
-import net.neoforged.neoforge.common.extensions.IBlockExtension;
-
+import org.jspecify.annotations.NonNull;
 import org.spongepowered.asm.mixin.transformer.ClassInfo;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -63,7 +61,7 @@ public final class BatchedRules {
                         if (!mixin.startsWith("top.earthstudio.acceleratedrecoiling.mixin.core")
                                 && !mixin.startsWith("com.wiyuka.acceleratedrecoiling.mixin.")
                                 && !mixin.startsWith("com.wiyuka.acceleratedrecoiling.collisiontest.mixin.")
-                                && !LithiumCompatibility.allows(mixin)) {
+                        ) {
                             AcceleratedRecoiling.LOGGER.debug("Collision optimization disabled for {} by {}",
                                     type.getName(), mixin);
                             return false;
@@ -94,15 +92,14 @@ public final class BatchedRules {
     private static final ClassValue<Boolean> PLAIN = new ClassValue<>() {
         @Override
         protected Boolean computeValue(Class<?> type) {
-            return vanillaEntity(type) && LivingEntity.class.isAssignableFrom(type)
-                    && CLEAN.get(type) && CollisionMethods.inherited(type, "pushable");
+            return vanillaEntity(type) && LivingEntity.class.isAssignableFrom(type) && CLEAN.get(type);
         }
     };
 
     private static final ClassValue<Boolean> PLAIN_BLOCK = new ClassValue<>() {
         @Override
         protected Boolean computeValue(Class<?> type) {
-            return CLEAN.get(type) && CollisionMethods.inherited(type, "ladder");
+            return CLEAN.get(type);
         }
     };
 
@@ -117,10 +114,15 @@ public final class BatchedRules {
 
     private static final ClassValue<Boolean> SOFT = new ClassValue<>() {
         @Override
-        protected Boolean computeValue(Class<?> type) {
-            return vanillaEntity(type) && CLEAN.get(type) && CollisionMethods.inherited(type, "soft");
+        protected Boolean computeValue(@NonNull Class<?> type) {
+            return vanillaEntity(type) && CLEAN.get(type) && !isHardObstacle(type);
         }
     };
+
+    private static boolean isHardObstacle(Class<?> type) {
+        return net.minecraft.world.entity.vehicle.Boat.class.isAssignableFrom(type)
+            || net.minecraft.world.entity.monster.Shulker.class.isAssignableFrom(type);
+    }
 
     public static boolean soft(Class<?> type) {
         return SOFT.get(type);
@@ -131,7 +133,7 @@ public final class BatchedRules {
                 && CLEAN.get(EntitySectionStorage.class) && CLEAN.get(BlockState.class)
                 && CLEAN.get(Holder.Reference.class) && CLEAN.get(Scoreboard.class)
                 && CLEAN.get(ServerScoreboard.class) && CLEAN.get(SynchedEntityData.class)
-                && CLEAN.get(IBlockExtension.class) && CLEAN.get(CommonHooks.class) && CLEAN.get(EntityGetter.class)
+                && CLEAN.get(EntityGetter.class)
                 && CLEAN.get(CommonLevelAccessor.class);
     }
 

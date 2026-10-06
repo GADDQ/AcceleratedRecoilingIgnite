@@ -6,25 +6,30 @@ import com.wiyuka.acceleratedrecoiling.natives.realtime.index.IndexedSection;
 import com.wiyuka.acceleratedrecoiling.natives.realtime.index.RealtimeSection;
 
 import net.minecraft.server.level.ServerLevel;
+
 import net.minecraft.util.AbortableIterationConsumer.Continuation;
 import net.minecraft.util.profiling.Profiler;
+
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
+
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.entity.EntitySectionStorage;
 import net.minecraft.world.level.entity.LevelEntityGetterAdapter;
+
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import net.neoforged.neoforge.common.config.NeoForgeServerConfig;
-
 import java.lang.ref.Reference;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 
 import top.earthstudio.acceleratedrecoiling.mixin.core.BatchedLevelAccess;
+import top.earthstudio.acceleratedrecoiling.mixin.core.LivingEntityAccess;
 import top.earthstudio.acceleratedrecoiling.mixin.core.RealtimeGetterAccess;
 
 public final class BatchedCollisions {
@@ -87,30 +92,48 @@ public final class BatchedCollisions {
     @SuppressWarnings("unchecked")
     public static boolean noEntityObstacles(Entity source, AABB area) {
         if (source.level().getClass() != ServerLevel.class || !BatchedRules.cleanWorld()
-                || !BatchedRules.plain(source.getClass())) {
+            || !BatchedRules.plain(source.getClass())) {
             return false;
         }
         ServerLevel level = (ServerLevel) source.level();
-
         if (!level.dragonParts().isEmpty()) return false;
 
         var getter = ((BatchedLevelAccess) level).ar$entities();
 
-        if (getter.getClass() != LevelEntityGetterAdapter.class) return false;
-        var access = (RealtimeGetterAccess<Entity>) getter;
+        if (!(getter instanceof ca.spottedleaf.moonrise.patches.chunk_system.level.entity.EntityLookup lookup)) {
+            return false;
+        }
 
-        boolean[] empty = { true };
-        access.ar$sectionStorage().forEachAccessibleNonEmptySection(area.inflate(1.0E-7), section -> {
-            if (!((IndexedSection) section).ar$realtimeSection().softOnly(section)) {
-                empty[0] = false;
-                return Continuation.ABORT;
+        AABB expanded = area.inflate(1.0E-7);
+        int minChunkX = net.minecraft.util.Mth.floor(expanded.minX) >> 4;
+        int minChunkZ = net.minecraft.util.Mth.floor(expanded.minZ) >> 4;
+        int maxChunkX = net.minecraft.util.Mth.floor(expanded.maxX) >> 4;
+        int maxChunkZ = net.minecraft.util.Mth.floor(expanded.maxZ) >> 4;
+        int minSectionY = net.minecraft.util.Mth.floor(expanded.minY) >> 4;
+        int maxSectionY = net.minecraft.util.Mth.floor(expanded.maxY) >> 4;
+
+        for (int cx = minChunkX; cx <= maxChunkX; ++cx) {
+            for (int cz = minChunkZ; cz <= maxChunkZ; ++cz) {
+                var slices = lookup.getChunk(cx, cz);
+                if (slices == null || !slices.status.isOrAfter(net.minecraft.server.level.FullChunkStatus.FULL)) {
+                    continue;
+                }
+                int startY = Math.max(minSectionY, slices.minSection);
+                int endY = Math.min(maxSectionY, slices.maxSection);
+
+                for (int sy = startY; sy <= endY; ++sy) {
+                    var index = ((com.wiyuka.acceleratedrecoiling.natives.realtime.compat.MoonriseChunkSlices) (Object) slices).ar$getRealtimeSection(sy);
+                    if (index != null && !index.softOnly(slices, sy)) {
+                        return false;
+                    }
+                }
             }
-            return Continuation.CONTINUE;
-        });
-        if (empty[0] && !(area.getSize() < 1.0E-7)) {
+        }
+
+        if (!(area.getSize() < 1.0E-7)) {
             Profiler.get().incrementCounter("getEntities");
         }
-        return empty[0];
+        return true;
     }
 
     @SuppressWarnings("unchecked")
@@ -123,11 +146,12 @@ public final class BatchedCollisions {
         if (!level.dragonParts().isEmpty()) {
             return false;
         }
-        var getter = ((BatchedLevelAccess) level).ar$entities();
-        if (getter.getClass() != LevelEntityGetterAdapter.class) return false;
-        var access = (RealtimeGetterAccess<Entity>) getter;
 
-        var storage = access.ar$sectionStorage();
+        var getter = ((BatchedLevelAccess) level).ar$entities();
+
+        if (!(getter instanceof ca.spottedleaf.moonrise.patches.chunk_system.level.entity.EntityLookup lookup)) {
+            return false;
+        }
 
         var frames = FRAMES.get();
         Frame frame = frames.pollFirst();
@@ -138,7 +162,10 @@ public final class BatchedCollisions {
         try {
             long epoch = BatchedRules.epoch();
             var bounds = source.getBoundingBox();
-            if (!collectSections(frame, storage, bounds, epoch)) return false;
+
+            if (!collectSections(frame, lookup, bounds, epoch)) {
+                return false;
+            }
 
             prepareSectionDescriptors(frame, source);
             return queryAndPush(source, level, bounds, frame);
@@ -153,30 +180,49 @@ public final class BatchedCollisions {
     private static boolean canPush(LivingEntity source) {
         return source.level().getClass() == ServerLevel.class
                 && BatchedRules.cleanWorld()
-                && !NeoForgeServerConfig.INSTANCE.fullBoundingBoxLadders.get()
                 && BatchedRules.classify(source, true) == BatchedRules.PUSHABLE;
     }
 
     private static boolean collectSections(Frame frame,
-                                           EntitySectionStorage<Entity> storage,
+                                           ca.spottedleaf.moonrise.patches.chunk_system.level.entity.EntityLookup lookup,
                                            AABB bounds,
                                            long epoch) {
         boolean[] supported = { true };
         frame.entryCount = 0;
 
-        storage.forEachAccessibleNonEmptySection(bounds, section -> {
-            var index = ((IndexedSection) section).ar$realtimeSection();
-            var view = index.view(section);
-            if (view == null) {
-                supported[0] = false;
-                return Continuation.ABORT;
-            }
+        int minChunkX = net.minecraft.util.Mth.floor(bounds.minX) >> 4;
+        int minChunkZ = net.minecraft.util.Mth.floor(bounds.minZ) >> 4;
+        int maxChunkX = net.minecraft.util.Mth.floor(bounds.maxX) >> 4;
+        int maxChunkZ = net.minecraft.util.Mth.floor(bounds.maxZ) >> 4;
+        int minSectionY = net.minecraft.util.Mth.floor(bounds.minY) >> 4;
+        int maxSectionY = net.minecraft.util.Mth.floor(bounds.maxY) >> 4;
 
-            index.prepareBatch(epoch);
-            frame.sections.add(view.retain());
-            frame.entryCount = Math.addExact(frame.entryCount, view.count());
-            return Continuation.CONTINUE;
-        });
+        for (int cx = minChunkX; cx <= maxChunkX; ++cx) {
+            for (int cz = minChunkZ; cz <= maxChunkZ; ++cz) {
+                var slices = lookup.getChunk(cx, cz);
+                if (slices == null || !slices.status.isOrAfter(net.minecraft.server.level.FullChunkStatus.FULL)) {
+                    continue;
+                }
+
+                int startY = Math.max(minSectionY, slices.minSection);
+                int endY = Math.min(maxSectionY, slices.maxSection);
+
+                for (int sy = startY; sy <= endY; ++sy) {
+                    var index = ((com.wiyuka.acceleratedrecoiling.natives.realtime.compat.MoonriseChunkSlices) (Object) slices).ar$getRealtimeSection(sy);
+                    if (index == null) continue;
+
+                    var view = index.view(slices, sy);
+                    if (view == null) {
+                        supported[0] = false;
+                        return false;
+                    }
+
+                    index.prepareBatch(epoch);
+                    frame.sections.add(view.retain());
+                    frame.entryCount = Math.addExact(frame.entryCount, view.count());
+                }
+            }
+        }
 
         return supported[0];
     }
@@ -209,7 +255,7 @@ public final class BatchedCollisions {
                                         AABB bounds,
                                         Frame frame) {
         IndexedEntity indexedSource = (IndexedEntity) source;
-        int crammingLimit = level.getGameRules().getInt(GameRules.RULE_MAX_ENTITY_CRAMMING);
+        int crammingLimit = level.getWorld().getGameRuleValue(org.bukkit.GameRule.MAX_ENTITY_CRAMMING);
         long counts = RealtimeNative.queryBatch(frame.sectionDescriptors, frame.sections.size(), frame.output, frame.sourceSection,
                 indexedSource.ar$sectionSlot(), source.getX(), source.getZ(),
                 bounds.minX, bounds.minY, bounds.minZ, bounds.maxX, bounds.maxY, bounds.maxZ,
@@ -255,7 +301,7 @@ public final class BatchedCollisions {
         } else {
             for (int index = 0; index < count; index++) {
                 Entity other = collisionTarget(frame, offset, index);
-                source.doPush(other);
+                ((LivingEntityAccess) source).ar$doPush(other);
             }
         }
     }
@@ -311,7 +357,6 @@ public final class BatchedCollisions {
 
         if (sourceNeedsSync) {
             source.setDeltaMovement(new Vec3(velocityX, velocityY, velocityZ));
-            source.hasImpulse = true;
         }
     }
 

@@ -7,8 +7,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.state.BlockState;
 
-import net.neoforged.neoforge.common.extensions.IBlockExtension;
-
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.ClassNode;
@@ -22,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import top.earthstudio.acceleratedrecoiling.mixin.core.LivingEntityAccess;
 import top.earthstudio.acceleratedrecoiling.mixin.plugins.AcceleratedRecoiling;
 
 final class CollisionMethods {
@@ -97,7 +96,7 @@ final class CollisionMethods {
             var references = new HashMap<String, List<MethodInsnNode>>();
 
             for (var method : type.methods) {
-                if (!method.name.equals("pushable") && !method.name.equals("soft") && !method.name.equals("ladder")) {
+                if (!method.name.equals("pushable") && !method.name.equals("soft")) {
                     continue;
                 }
 
@@ -123,7 +122,7 @@ final class CollisionMethods {
         living.isAlive();
         living.getHealth();
         living.isSleeping();
-        living.doPush(entity);
+        ((LivingEntityAccess) living).ar$doPush(entity);
         living.push(entity);
 
         entity.getRootVehicle();
@@ -143,10 +142,5 @@ final class CollisionMethods {
     private static void soft(Entity entity) {
         entity.canBeCollidedWith(entity);
         entity.isSpectator();
-    }
-
-    private static void ladder(IBlockExtension block, BlockState state, LevelReader level,
-            BlockPos position, LivingEntity entity) {
-        block.isLadder(state, level, position, entity);
     }
 }
