@@ -7,6 +7,10 @@ Powered by [Ignite](https://github.com/vectrix-space/ignite) Mixin Loader, built
 
 > [!WARNING]
 > **Java 25 is required to run!**
+>
+> **This project is NOT a standard Spigot / Paper plugin, it MUST be loaded by Ignite Mixin Loader to work!**
+>
+> **Also, it's NOT a universal mod for ANY version! For now, it ONLY support 1.21.10 / 1.21.11, other version will NOT work!**
 
 # Performance
 Same as the original [mod](https://github.com/wiyuka-owo/AcceleratedRecoiling). You can check the full test result in [here](https://github.com/wiyuka-owo/AcceleratedRecoiling#%E6%80%A7%E8%83%BD).
