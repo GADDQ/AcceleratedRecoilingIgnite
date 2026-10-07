@@ -5,6 +5,9 @@ AABB collision optimization for Paper.
 
 Powered by [Ignite](https://github.com/vectrix-space/ignite) Mixin Loader, built for [Paper](https://papermc.io/) 1.21.10, 1.21.11
 
+> [!WARNING]
+> **Java 25 is required to run!**
+
 # Performance
 Same with original [mod](https://github.com/wiyuka-owo/AcceleratedRecoiling). You can check the full test result in [here](https://github.com/wiyuka-owo/AcceleratedRecoiling#%E6%80%A7%E8%83%BD).
 
