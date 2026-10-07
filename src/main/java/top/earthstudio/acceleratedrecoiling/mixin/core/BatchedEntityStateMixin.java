@@ -11,14 +11,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(Entity.class)
-public class BatchedEntityStateMixin { // TODO: correct to moonrise
+public class BatchedEntityStateMixin {
     @Inject(method = { "baseTick", "setPosRaw", "addPassenger", "removePassenger", "stopRiding", "setId", "setUUID" },
             at = { @At("HEAD"), @At("RETURN") })
     private void ar$stateChanged(CallbackInfo ci) {
         ((IndexedEntity) this).ar$collisionStateDirty();
     }
 
-    @Inject(method = "startRiding(Lnet/minecraft/world/entity/Entity;ZZ)Z", at = { @At("HEAD"), @At("RETURN") }) // TODO: replace correct method, paper doesn't have this method
+    @Inject(method = "startRiding(Lnet/minecraft/world/entity/Entity;ZZ)Z", at = { @At("HEAD"), @At("RETURN") })
     private void ar$mounted(CallbackInfoReturnable<Boolean> cir) {
         ((IndexedEntity) this).ar$collisionStateDirty();
     }
