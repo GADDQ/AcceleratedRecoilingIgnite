@@ -105,6 +105,11 @@ def copyNativeLibraries = tasks.register('copyRealtimeNative', Sync) {
 }
 sourceSets.main.resources.srcDir nativeResources
 tasks.named('processResources') { dependsOn copyNativeLibraries }
+
+tasks.matching { it.name == 'sourcesJar' }.configureEach {
+    dependsOn copyNativeLibraries
+}
+
 tasks.named('jar', Jar) {
     manifest.attributes('AR-Native-Toolchain': toolchainVersion)
 }
